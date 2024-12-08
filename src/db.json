@@ -1,0 +1,93 @@
+{
+  "auth": {
+    "email": "admin@gmail.com",
+    "password": "123456"
+  },
+  "categories": [
+    {
+      "id": "1",
+      "name": "cloth"
+    },
+    {
+      "id": "2",
+      "name": "Bag"
+    },
+    {
+      "id": "3",
+      "name": "Accessory"
+    }
+  ],
+  "colors": [
+    {
+      "id": 1,
+      "name": "white"
+    },
+    {
+      "id": 2,
+      "name": "yellow"
+    },
+    {
+      "id": 3,
+      "name": "black"
+    },
+    {
+      "id": 4,
+      "name": "pink"
+    },
+    {
+      "id": 5,
+      "name": "blue"
+    },
+    {
+      "id": 6,
+      "name": "silver"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "T-shirt long sleeve",
+      "available": 23,
+      "sold": 10,
+      "categoryId": 1,
+      "colorIds": [1, 4],
+      "price": 300000
+    },
+    {
+      "id": 2,
+      "name": "Trouser with tie",
+      "available": 4,
+      "sold": 2,
+      "categoryId": 1,
+      "colors": [1, 4],
+      "price": 450000
+    },
+    {
+      "id": 3,
+      "name": "Backpack Elsa",
+      "available": 100,
+      "sold": 7,
+      "categoryId": 2,
+      "colors": [4, 6],
+      "price": 370000
+    },
+    {
+      "id": 4,
+      "name": "Silver necklace",
+      "available": 30,
+      "sold": 1,
+      "categoryId": 3,
+      "colors": [8],
+      "price": 1450000
+    },
+    {
+      "id": 5,
+      "name": "Hand Bag with metal strap",
+      "available": 5,
+      "sold": 1,
+      "categoryId": 2,
+      "colors": [3, 2],
+      "price": 260000
+    }
+  ]
+}
