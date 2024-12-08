@@ -1,6 +1,27 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { BASE_URL } from "../../constants";
 export const LOGIN = "LOGIN";
 
+export const fetchUsers = createAsyncThunk("users/fetchUsers", async () => {
+  const userResponse = await fetch(BASE_URL + "/auth");
+
+  if (userResponse.status === 200) {
+    const userData = await userResponse.json();
+    console.log(userData);
+
+    return {
+      error: false,
+      users: userData,
+    };
+  }
+  return {
+    error: true,
+  };
+});
+
+// const initialState = {
+
+// }
 const auth = createSlice({
   name: "auth",
   initialState: {
