@@ -16,7 +16,13 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import { Container } from "@mui/material";
-import { fetchProducts, updateProduct } from "../store/reducers/productReducer"; // Adjust path as needed
+import {
+  fetchProducts,
+  updateProduct,
+  createProduct,
+  deleteProduct,
+} from "../store/reducers/productReducer"; // Use createProduct instead of addProduct
+
 import { fetchColors } from "../store/reducers/colorReducer"; // Adjust path as needed
 import { fetchCategories } from "../store/reducers/categoryReducer"; // Adjust path as needed
 import { AppDispatch } from "../store"; // Import RootState and AppDispatch from store
@@ -33,17 +39,23 @@ const getColorNames = (colorIds: any[], colorData: any[]) => {
 
   return colorIds
     .map((colorId) => {
-      const colorItem = colorData.find((col: any) => String(col.id) === String(colorId));
+      const colorItem = colorData.find(
+        (col: any) => String(col.id) === String(colorId)
+      );
       return colorItem ? colorItem.name : "Unknown Color";
     })
     .join(", ");
 };
 
 export default function Products() {
-  const dispatch = useDispatch<AppDispatch>(); 
-  const { products, status, error } = useSelector((state: any) => state.products); 
-  const { color } = useSelector((state: any) => state.color); 
-  const { categories, status: categoryStatus } = useSelector((state: any) => state.categories); 
+  const dispatch = useDispatch<AppDispatch>();
+  const { products, status, error } = useSelector(
+    (state: any) => state.products
+  );
+  const { color } = useSelector((state: any) => state.color);
+  const { categories, status: categoryStatus } = useSelector(
+    (state: any) => state.categories
+  );
 
   // State to control modal visibility and selected product data
   const [open, setOpen] = useState(false);
@@ -54,7 +66,7 @@ export default function Products() {
     name: "",
     available: 0,
     sold: 0,
-    categoryId: "", 
+    categoryId: "",
     price: 0,
     colorIds: [] as number[],
   });
@@ -63,7 +75,9 @@ export default function Products() {
     const normalizedProduct = { ...product };
 
     if (normalizedProduct.colorIds) {
-      normalizedProduct.colorIds = normalizedProduct.colorIds.map((id: any) => Number(id));
+      normalizedProduct.colorIds = normalizedProduct.colorIds.map((id: any) =>
+        Number(id)
+      );
     }
 
     return normalizedProduct;
@@ -75,7 +89,7 @@ export default function Products() {
       name: product.name,
       available: product.available,
       sold: product.sold,
-      categoryId: product.categoryId,  // Populate categoryId from the product
+      categoryId: product.categoryId, // Populate categoryId from the product
       price: product.price,
       colorIds: product.colorIds || [],
     });
@@ -93,11 +107,16 @@ export default function Products() {
     }
 
     if (selectedProduct) {
-      dispatch(updateProduct({
-        ...formData,
-        colorIds: formData.colorIds,
-        id: selectedProduct.id,
-      }));
+      dispatch(
+        updateProduct({
+          ...formData,
+          colorIds: formData.colorIds,
+          id: selectedProduct.id,
+        })
+      );
+    } else {
+      // Use createProduct to add a new product
+      dispatch(createProduct(formData));
     }
 
     handleClose();
@@ -107,7 +126,7 @@ export default function Products() {
     const value = event.target.value;
     setFormData((prevState) => ({
       ...prevState,
-      [name]: value,  // Update categoryId here when the user selects a new category
+      [name]: value, // Update categoryId here when the user selects a new category
     }));
   };
 
@@ -136,16 +155,30 @@ export default function Products() {
     }));
   };
 
+  const handleDelete = (productId: string) => {
+    // Show a confirmation before deleting
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      dispatch(deleteProduct(productId)); // Dispatch delete action
+    }
+  };
+
   useEffect(() => {
     if (status === "idle") {
       dispatch(fetchProducts());
       dispatch(fetchColors());
-      dispatch(fetchCategories()); 
+      dispatch(fetchCategories());
     }
   }, [dispatch, status]);
 
   // Loading states
-  if (status === "loading" || !color || color.length === 0 || categoryStatus === "loading" || !categories || categories.length === 0) {
+  if (
+    status === "loading" ||
+    !color ||
+    color.length === 0 ||
+    categoryStatus === "loading" ||
+    !categories ||
+    categories.length === 0
+  ) {
     return <div>Loading data...</div>;
   }
 
@@ -153,8 +186,61 @@ export default function Products() {
     return <div>Error: {error}</div>;
   }
 
+  // Calculate totals
+  const totalAvailable = products.reduce(
+    (total: number, product: any) =>
+      total +
+      (isNaN(Number(product.available)) ? 0 : Number(product.available)),
+    0
+  );
+
+  const totalSold = products.reduce(
+    (total: number, product: any) =>
+      total + (isNaN(Number(product.sold)) ? 0 : Number(product.sold)),
+    0
+  );
+
+  const totalRevenue = products.reduce(
+    (total: number, product: any) => total + (isNaN(Number(product.price)) ? 0 : Number(product.price)) * (isNaN(Number(product.sold)) ? 0 : Number(product.sold)),
+    0
+  );
+  
+  // Format revenue as a decimal number with comma as thousand separator
+  const formattedTotalRevenue = new Intl.NumberFormat().format(Number(totalRevenue));
+  
+
   return (
     <Container>
+      {/* Display Total values */}
+      <Box sx={{ marginBottom: 3 }}>
+        <h3>Total: </h3>
+        <p>Available: {totalAvailable}</p>
+        <p>Sold: {totalSold}</p>
+        <p>Revenue: ${formattedTotalRevenue}</p>
+      </Box>
+
+      {/* Add Product Button */}
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => {
+          setSelectedProduct(null); // Reset form for new product
+          setFormData({
+            name: "",
+            available: 0,
+            sold: 0,
+            categoryId: "",
+            price: 0,
+            colorIds: [],
+          });
+          setOpen(true);
+        }}
+        fullWidth
+        style={{ marginTop: 20 }}
+      >
+        Add Product
+      </Button>
+
       <TableContainer component={Paper}>
         <Table aria-label="simple table">
           <TableHead>
@@ -175,7 +261,10 @@ export default function Products() {
                 const normalizedProduct = normalizeProductData(product);
 
                 // Find the category for the product by matching categoryId
-                const category = categories.find((category: any) => String(category.id) === String(normalizedProduct.categoryId));
+                const category = categories.find(
+                  (category: any) =>
+                    String(category.id) === String(normalizedProduct.categoryId)
+                );
 
                 return (
                   <TableRow key={normalizedProduct.id}>
@@ -184,11 +273,11 @@ export default function Products() {
                     <TableCell>{normalizedProduct.available}</TableCell>
                     <TableCell>{normalizedProduct.sold}</TableCell>
                     <TableCell>
-                      {/* If category is found, display category name */}
                       {category ? category.name : "No category"}
                     </TableCell>
                     <TableCell>
-                      {normalizedProduct.colorIds && normalizedProduct.colorIds.length > 0
+                      {normalizedProduct.colorIds &&
+                      normalizedProduct.colorIds.length > 0
                         ? getColorNames(normalizedProduct.colorIds, color)
                         : "No colors available"}
                     </TableCell>
@@ -202,7 +291,11 @@ export default function Products() {
                       >
                         Edit
                       </Button>
-                      <Button variant="outlined" color="error">
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleDelete(normalizedProduct.id)}
+                      >
                         Delete
                       </Button>
                     </TableCell>
@@ -220,107 +313,107 @@ export default function Products() {
         </Table>
       </TableContainer>
 
-      {/* Modal for editing product */}
+      {/* Modal for editing or adding a product */}
       <Modal
         open={open}
         onClose={handleClose}
         aria-labelledby="edit-product-modal-title"
         aria-describedby="edit-product-modal-description"
       >
-        <Box sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)", 
-          width: 400,
-          padding: 3,
-          backgroundColor: "white",
-          boxShadow: 24,
-          borderRadius: 2,
-        }}>
-          <h2 id="edit-product-modal-title">Edit Product</h2>
-          {selectedProduct ? (
-            <div>
-              <TextField
-                label="Product Name"
-                name="name"
-                variant="outlined"
-                value={formData.name}
-                onChange={handleInputChange}
-                fullWidth
-                style={{ marginBottom: 16 }}
-              />
-              <TextField
-                label="Available"
-                name="available"
-                variant="outlined"
-                value={formData.available}
-                onChange={handleInputChange}
-                fullWidth
-                style={{ marginBottom: 16 }}
-              />
-              <TextField
-                label="Sold"
-                name="sold"
-                variant="outlined"
-                value={formData.sold}
-                onChange={handleInputChange}
-                fullWidth
-                style={{ marginBottom: 16 }}
-              />
-              <TextField
-                label="Price"
-                name="price"
-                variant="outlined"
-                value={formData.price}
-                onChange={handleInputChange}
-                fullWidth
-                style={{ marginBottom: 16 }}
-              />
-              <FormControl fullWidth style={{ marginBottom: 16 }}>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={formData.categoryId}  // Bind categoryId to the Select input
-                  onChange={(event) => handleSelectChange(event, "categoryId")}
-                  label="Category"
-                >
-                  {categories.map((category: any) => (
-                    <MenuItem key={category.id} value={category.id}>
-                      {category.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth style={{ marginBottom: 16 }}>
-                <InputLabel>Color</InputLabel>
-                <Select
-                  multiple
-                  value={formData.colorIds}
-                  onChange={handleColorChange}
-                  label="Color"
-                >
-                  {color.map((col: any) => (
-                    <MenuItem key={col.id} value={col.id}>
-                      {col.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSave}
-                fullWidth
-                style={{ marginTop: 20 }}
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            padding: 3,
+            backgroundColor: "white",
+            boxShadow: 24,
+            borderRadius: 2,
+          }}
+        >
+          <h2 id="edit-product-modal-title">
+            {selectedProduct ? "Edit Product" : "Add Product"}
+          </h2>
+          <div>
+            <TextField
+              label="Product Name"
+              name="name"
+              variant="outlined"
+              value={formData.name}
+              onChange={handleInputChange}
+              fullWidth
+              style={{ marginBottom: 16 }}
+            />
+            <TextField
+              label="Available"
+              name="available"
+              variant="outlined"
+              value={formData.available}
+              onChange={handleInputChange}
+              fullWidth
+              style={{ marginBottom: 16 }}
+            />
+            <TextField
+              label="Sold"
+              name="sold"
+              variant="outlined"
+              value={formData.sold}
+              onChange={handleInputChange}
+              fullWidth
+              style={{ marginBottom: 16 }}
+            />
+            <TextField
+              label="Price"
+              name="price"
+              variant="outlined"
+              value={formData.price}
+              onChange={handleInputChange}
+              fullWidth
+              style={{ marginBottom: 16 }}
+            />
+            <FormControl fullWidth style={{ marginBottom: 16 }}>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={formData.categoryId}
+                onChange={(event) => handleSelectChange(event, "categoryId")}
+                label="Category"
               >
-                Save Changes
-              </Button>
-            </div>
-          ) : (
-            <div>Loading product data...</div>
-          )}
+                {categories.map((category: any) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth style={{ marginBottom: 16 }}>
+              <InputLabel>Color</InputLabel>
+              <Select
+                multiple
+                value={formData.colorIds}
+                onChange={handleColorChange}
+                label="Color"
+              >
+                {color.map((col: any) => (
+                  <MenuItem key={col.id} value={col.id}>
+                    {col.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSave}
+              fullWidth
+              style={{ marginTop: 20 }}
+            >
+              {selectedProduct ? "Save Changes" : "Add Product"}
+            </Button>
+          </div>
         </Box>
       </Modal>
     </Container>

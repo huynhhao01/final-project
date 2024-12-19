@@ -15,7 +15,6 @@ export const fetchProducts = createAsyncThunk(
       return { productData }; // Return product data
     } catch (error) {
       console.error("Error fetching products:", error); // Log errors if fetch fails
-      // return { error: error.message }; // Return error message if fetch fails
     }
   }
 );
@@ -25,14 +24,17 @@ export const updateProduct = createAsyncThunk(
   "products/updateProduct",
   async (updatedProduct: any) => {
     try {
-      const response = await fetch(`${BASE_URL}/products/${updatedProduct.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedProduct),
-      });      
-      
+      const response = await fetch(
+        `${BASE_URL}/products/${updatedProduct.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedProduct),
+        }
+      );
+
       if (!response.ok) {
         throw new Error("Failed to update product");
       }
@@ -42,6 +44,54 @@ export const updateProduct = createAsyncThunk(
     } catch (error) {
       console.error("Error updating product:", error);
       throw error; // Throw error if update fails
+    }
+  }
+);
+
+// Async thunk to create a new product
+export const createProduct = createAsyncThunk(
+  "products/createProduct",
+  async (newProduct: any) => {
+    try {
+      const response = await fetch(`${BASE_URL}/products`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newProduct),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create product");
+      }
+
+      const createdProduct = await response.json();
+      console.log("Created Product:", createdProduct);
+      return createdProduct; // Return created product data
+    } catch (error) {
+      console.error("Error creating product:", error);
+      throw error; // Throw error if create fails
+    }
+  }
+);
+
+// Async thunk to delete a product
+export const deleteProduct = createAsyncThunk(
+  "products/deleteProduct",
+  async (productId: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/products/${productId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete product");
+      }
+
+      return productId; // Return the product ID after successful deletion
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      throw error; // Throw error if deletion fails
     }
   }
 );
@@ -77,27 +127,19 @@ const productSlice = createSlice({
         state.status = "loading"; // Set status to loading when the request is pending
       })
       .addCase(fetchProducts.fulfilled, (state, action: any) => {
-        console.log("Action on fulfilled:", action); // Log action to check payload
         if (action.payload.productData) {
           state.products = action.payload.productData; // Store products on successful fetch
           state.status = "succeeded"; // Mark status as succeeded
-        } else if (action.payload.error) {
-          state.error = action.payload.error; // Store error message if there's an issue
-          state.status = "failed"; // Mark status as failed
         }
       })
       .addCase(fetchProducts.rejected, (state, action) => {
-        console.log("Error in rejected case:", action.error.message); // Log the error message
-        state.status = "failed"; // Mark status as failed
-        // state.error = action.error.message; // Store error message in state
+        state.status = "failed"; // Mark status as failed if there's an error
       })
       // Handle updateProduct actions
       .addCase(updateProduct.pending, (state) => {
         state.status = "loading"; // Set status to loading when the update request is pending
       })
       .addCase(updateProduct.fulfilled, (state, action: any) => {
-        console.log("Action on fulfilled:", action); // Log the action payload
-        // Find the index of the updated product and replace it
         const index = state.products.findIndex(
           (product) => product.id === action.payload.id
         );
@@ -106,11 +148,21 @@ const productSlice = createSlice({
           state.status = "succeeded"; // Mark status as succeeded
         }
       })
-      .addCase(updateProduct.rejected, (state, action) => {
-        console.log("Error in rejected case:", action.error.message); // Log the error message
-        state.status = "failed"; // Mark status as failed
-        // state.error = action.error.message; // Store error message in state
-      });
+      // Handle deleteProduct actions
+      .addCase(deleteProduct.pending, (state) => {
+        state.status = "loading"; // Set status to loading when the delete request is pending
+      })
+      .addCase(deleteProduct.fulfilled, (state, action: any) => {
+        // Remove the product from the array based on the product ID
+        state.products = state.products.filter(
+          (product) => product.id !== action.payload
+        );
+        state.status = "succeeded"; // Mark status as succeeded
+      })
+      .addCase(deleteProduct.rejected, (state, action) => {
+        state.status = "failed"; // Mark status as failed if there's an error
+      })
+      // Handle other actions (createProduct, etc.)
   },
 });
 
