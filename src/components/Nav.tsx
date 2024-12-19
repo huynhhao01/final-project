@@ -1,67 +1,130 @@
-import AppBar from "@mui/material/AppBar";
-import Container from "@mui/material/Container";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
+import React, { useState } from "react";
+import {
+  Drawer,
+  Box,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+} from "@mui/material";
 import { Link, Outlet } from "react-router-dom";
-import SideBar from "./SideBar";
-
-// const pages = ["Products", "Categories", "Color"];
+// import { ChevronLeft } from "@mui/icons-material";
 
 const Nav = () => {
+  const [open, setOpen] = useState(true); // State to toggle the sidebar
+
+  const toggleDrawer = () => {
+    setOpen(!open);
+  };
+
   return (
     <>
-      <AppBar position="static" sx={{ mb: 5 }}>
-        <Container maxWidth="xl">
-          <MenuItem>
-            <Typography
-              variant="h5"
-              noWrap
-              component="div"
-              //   sx={{ display: { xs: "none", sm: "block" } }}
-              sx={{ margin: ".5rem 1rem .5rem", color: "white" }}
+      <Box sx={{ display: "flex" }}>
+        <Drawer
+          sx={{
+            width: 240, // Sidebar width
+            flexShrink: 0,
+            "& .MuiDrawer-paper": {
+              width: 240,
+              boxSizing: "border-box",
+            },
+          }}
+          variant="persistent"
+          anchor="left"
+          open={open}
+          onClose={toggleDrawer}
+        >
+          {/* <Box sx={{ display: "flex", justifyContent: "flex-end", padding: "1rem" }}>
+            <ChevronLeft onClick={toggleDrawer} style={{ cursor: "pointer" }} />
+          </Box> */}
+          <List>
+            {/* Products Link with outlined style */}
+            <ListItem
+              component="a"
+              sx={{
+                border: "1px solid", // Add border for outlined style
+                borderColor: "primary.main", // Border color using theme
+                borderRadius: "4px", // Rounded corners
+                marginBottom: "8px", // Space between items
+                "&:hover": {
+                  backgroundColor: "primary.light", // Highlight on hover
+                  borderColor: "primary.dark", // Darker border on hover
+                },
+              }}
             >
-              <Link
-                to="/seller/products"
-                style={{ textDecoration: "none", color: "white" }}
-              >
-                Products
-              </Link>
-            </Typography>
+              <ListItemText>
+                <Link
+                  to="/seller/products"
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  Products
+                </Link>
+              </ListItemText>
+            </ListItem>
 
-            <Typography
-              variant="h5"
-              noWrap
-              component="div"
-              sx={{ margin: ".5rem 1rem .5rem" }}
+            {/* Categories Link with outlined style */}
+            <ListItem
+              component="a"
+              sx={{
+                border: "1px solid",
+                borderColor: "primary.main",
+                borderRadius: "4px",
+                marginBottom: "8px",
+                "&:hover": {
+                  backgroundColor: "primary.light",
+                  borderColor: "primary.dark",
+                },
+              }}
             >
-              <Link
-                to="/seller/categories"
-                style={{ textDecoration: "none", color: "white" }}
-              >
-                Categories
-              </Link>
-            </Typography>
+              <ListItemText>
+                <Link
+                  to="/seller/categories"
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  Categories
+                </Link>
+              </ListItemText>
+            </ListItem>
 
-            <Typography
-              variant="h5"
-              noWrap
-              component="div"
-              sx={{ margin: ".5rem 1rem .5rem" }}
+            {/* Color Link with outlined style */}
+            <ListItem
+              component="a"
+              sx={{
+                border: "1px solid",
+                borderColor: "primary.main",
+                borderRadius: "4px",
+                marginBottom: "8px",
+                "&:hover": {
+                  backgroundColor: "primary.light",
+                  borderColor: "primary.dark",
+                },
+              }}
             >
-              <Link
-                to="/seller/color"
-                style={{ textDecoration: "none", color: "white" }}
-              >
-                Color
-              </Link>
-            </Typography>
-          </MenuItem>
-        </Container>
-      </AppBar>
-      <Outlet />
+              <ListItemText>
+                <Link
+                  to="/seller/color"
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  Color
+                </Link>
+              </ListItemText>
+            </ListItem>
+          </List>
+          <Divider />
+        </Drawer>
+
+        {/* Main content area */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            bgcolor: "background.default",
+            p: 3,
+          }}
+        >
+          <Outlet />
+        </Box>
+      </Box>
     </>
   );
 };

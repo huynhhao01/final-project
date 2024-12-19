@@ -1,37 +1,53 @@
-import { useRef } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
-import { LOGIN } from "../store/reducers/authReducer";
-
+import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
 import Button from "@mui/material/Button";
+import { loginAsync } from "../store/reducers/authReducer";
+import { AppDispatch } from "../store";
 
 const Login = () => {
-  const auth = useSelector((state: { auth: any }) => state.auth);
-  const dispatch = useDispatch();
-  const formRef = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const [loginData, setLoginData] = useState({
+    email: "",
+    password: "",
+  });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  // Select authentication state
+  const { status, error, isLoggedIn } = useSelector((state: any) => state.auth);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/seller/products"); // Redirect to home page if the user is already logged in
+    }
+  }, [isLoggedIn, navigate]); // Dependency on isLoggedIn and navigate
+
+  const handleChangeLogin = (type: string, e: any) => {
+    setLoginData({ ...loginData, [type]: e.target.value });
+  };
+
+  const handleLogin = async (e: any) => {
     e.preventDefault();
-    let emailVal = "",
-      passwordVal = "";
 
-    if (formRef.current.email) {
-      emailVal = formRef.current?.email.value;
+    // Dispatch the login action
+    const result = await dispatch(
+      loginAsync({
+        email: loginData.email,
+        password: loginData.password,
+      })
+    );
+
+    // Check if the login was successful
+    if (result.meta.requestStatus === "fulfilled") {
+      navigate("/seller/products"); // Redirect to home page after successful login
+    } else {
+      alert(error || "Invalid credentials or login failed.");
     }
-
-    if (formRef.current.password) {
-      passwordVal = formRef.current?.password.value;
-    }
-
-    dispatch({
-      type: LOGIN,
-      email: emailVal,
-      password: passwordVal,
-    });
   };
 
   return (
@@ -40,29 +56,34 @@ const Login = () => {
       <Grid container spacing={3}>
         <Grid item md={3}></Grid>
         <Grid item md={6}>
-          <FormControl
-            fullWidth
-            sx={{ m: 1 }}
-            variant="filled"
-            onSubmit={handleLogin}
-          >
-            <TextField
-              id="outlined-basic"
-              label="Email"
-              variant="outlined"
-              inputRef={(element) => (formRef.current["email"] = element)}
-            />
-            <TextField
-              id="outlined-basic"
-              label="Password"
-              variant="outlined"
-              sx={{ my: 2 }}
-              inputRef={(element) => (formRef.current["password"] = element)}
-            />
-            <Grid item>
-              <Button variant="contained">Login</Button>
-            </Grid>
-          </FormControl>
+          <form onSubmit={handleLogin}>
+            <FormControl fullWidth sx={{ m: 1 }} variant="filled">
+              <TextField
+                label="Email"
+                variant="outlined"
+                type="email"
+                value={loginData.email}
+                onChange={(e) => handleChangeLogin("email", e)}
+              />
+              <TextField
+                label="Password"
+                variant="outlined"
+                sx={{ my: 2 }}
+                type="password"
+                value={loginData.password}
+                onChange={(e) => handleChangeLogin("password", e)}
+              />
+              <Grid item>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={status === "loading"}
+                >
+                  {status === "loading" ? "Logging in..." : "Login"}
+                </Button>
+              </Grid>
+            </FormControl>
+          </form>
         </Grid>
         <Grid item md={3}></Grid>
       </Grid>

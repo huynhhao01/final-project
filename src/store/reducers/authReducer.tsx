@@ -1,43 +1,73 @@
+// authReducer.ts
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { BASE_URL } from "../../constants";
-export const LOGIN = "LOGIN";
 
-export const fetchUsers = createAsyncThunk("users/fetchUsers", async () => {
-  const userResponse = await fetch(BASE_URL + "/auth");
+interface AuthState {
+  user: { email: string; name: string } | null;
+  status: "idle" | "loading" | "succeeded" | "failed";
+  error: string | null;
+  isLoggedIn: boolean;
+}
 
-  if (userResponse.status === 200) {
-    const userData = await userResponse.json();
-    console.log(userData);
+// Async action for login
+export const loginAsync = createAsyncThunk(
+  "auth/login",
+  async ({ email, password }: { email: string; password: string }) => {
+    // Fetch user data from the /auth endpoint in db.json
+    const response = await fetch("/auth");
+    const data = await response.json();
 
-    return {
-      error: false,
-      users: userData,
-    };
+    // Check if email and password match
+    if (data.email === email && data.password === password) {
+      return { error: false, userData: data }; // Successful login
+    } else {
+      return { error: true, message: "Invalid credentials" }; // Invalid credentials
+    }
   }
-  return {
-    error: true,
-  };
-});
+);
 
-// const initialState = {
+const initialState: AuthState = {
+  user: null,
+  status: "idle",
+  error: null,
+  isLoggedIn: false,
+};
 
-// }
-const auth = createSlice({
+// Slice definition for authentication
+const authSlice = createSlice({
   name: "auth",
-  initialState: {
-    email: "",
-    password: "",
-    isLoggedIn: false,
+  initialState,
+  reducers: {
+    logout: (state) => {
+      state.user = null;
+      state.status = "idle";
+      state.error = null;
+      state.isLoggedIn = false; // Set to false on logout
+    },
   },
-  reducers: {},
   extraReducers(builder) {
-    builder.addCase(LOGIN, (state, action: any) => {
-      state.email = action.email;
-      state.password = action.password;
-      state.isLoggedIn = true;
-    });
+    builder
+      .addCase(loginAsync.fulfilled, (state, action) => {
+        if (!action.payload.error) {
+          state.status = "succeeded";
+          state.user = action.payload.userData;
+          state.error = null;
+          state.isLoggedIn = true;
+        } else {
+          state.status = "failed";
+          state.error =
+            action.payload.message || "Login failed, please try again.";
+          // state.isLoggedIn = false;
+        }
+      })
+      .addCase(loginAsync.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(loginAsync.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "An error occurred";
+        // state.isLoggedIn = false;
+      });
   },
 });
 
-const authReducer = auth.reducer;
-export default authReducer;
+export default authSlice.reducer;
