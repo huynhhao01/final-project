@@ -46,13 +46,11 @@
   "products": [
     {
       "name": "T-shirt long sleevesdf",
-      "available": "232",
-      "sold": "10",
-      "categoryId": 1,
+      "available": "23",
+      "sold": "100",
       "price": "300000",
       "colorIds": [
-        4,
-        3
+        2
       ],
       "id": "1"
     },

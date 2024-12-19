@@ -18,35 +18,38 @@ import InputLabel from "@mui/material/InputLabel";
 import { Container } from "@mui/material";
 import { fetchProducts, updateProduct } from "../store/reducers/productReducer"; // Adjust path as needed
 import { fetchColors } from "../store/reducers/colorReducer"; // Adjust path as needed
+import { fetchCategories } from "../store/reducers/categoryReducer"; // Adjust path as needed
 import { AppDispatch } from "../store"; // Import RootState and AppDispatch from store
 
 // Helper function to get color names based on colorIds
 const getColorNames = (colorIds: any[], colorData: any[]) => {
   if (!Array.isArray(colorIds) || colorIds.length === 0) {
-    return "No colors available"; // If colorIds is empty or invalid
+    return "No colors available";
   }
 
   if (!Array.isArray(colorData) || colorData.length === 0) {
-    return "Color data not available"; // Return fallback message if color data is missing
+    return "Color data not available";
   }
 
-  // Map colorIds to actual color names
   return colorIds
     .map((colorId) => {
       const colorItem = colorData.find(
         (col: any) => String(col.id) === String(colorId)
       );
-      return colorItem ? colorItem.name : "Unknown Color"; // Return color name or fallback if not found
+      return colorItem ? colorItem.name : "Unknown Color";
     })
-    .join(", "); // Join color names with commas for display
+    .join(", ");
 };
 
 export default function Products() {
-  const dispatch = useDispatch<AppDispatch>(); // Properly typed dispatch
+  const dispatch = useDispatch<AppDispatch>();
   const { products, status, error } = useSelector(
     (state: any) => state.products
-  ); // Properly typed state for products
-  const { color } = useSelector((state: any) => state.color); // Properly typed state for colors
+  );
+  const { color } = useSelector((state: any) => state.color);
+  const { categories, status: categoryStatus } = useSelector(
+    (state: any) => state.categories
+  );
 
   // State to control modal visibility and selected product data
   const [open, setOpen] = useState(false);
@@ -59,13 +62,12 @@ export default function Products() {
     sold: 0,
     categoryId: "",
     price: 0,
-    colorIds: [] as number[], // Handle multiple colors
+    colorIds: [] as number[],
   });
 
   const normalizeProductData = (product: any) => {
     const normalizedProduct = { ...product };
 
-    // Normalize the colorIds field to always be numbers
     if (normalizedProduct.colorIds) {
       normalizedProduct.colorIds = normalizedProduct.colorIds.map((id: any) =>
         Number(id)
@@ -76,7 +78,7 @@ export default function Products() {
   };
 
   const handleOpen = (product: any) => {
-    setSelectedProduct(product); // Set the product that was clicked
+    setSelectedProduct(product);
     setFormData({
       name: product.name,
       available: product.available,
@@ -84,42 +86,35 @@ export default function Products() {
       categoryId: product.categoryId,
       price: product.price,
       colorIds: product.colorIds || [],
-    }); // Initialize form data with the selected product
-    setOpen(true); // Open the modal
+    });
+    setOpen(true);
   };
 
   const handleClose = () => {
-    setOpen(false); // Close the modal
+    setOpen(false);
   };
 
   const handleSave = () => {
-    console.log("Form Data before Save:", formData);
-
     if (!formData.name || formData.available < 0 || formData.price <= 0) {
       alert("Please fill in all fields correctly");
       return;
     }
 
-    // Log to check if formData is updated correctly
-    console.log("Form Data before Save:", formData);
-
     if (selectedProduct) {
-      // Dispatch the action to update the product, including the updated colorIds
       dispatch(
         updateProduct({
           ...formData,
-          colorIds: formData.colorIds, // Ensure colorIds is updated correctly
+          colorIds: formData.colorIds,
           id: selectedProduct.id,
         })
       );
     }
 
-    handleClose(); // Close the modal after saving
+    handleClose();
   };
 
-  // Separate handler for Select changes
   const handleSelectChange = (event: any, name: string) => {
-    const value = event.target.value as string | number | string[] | number[]; // Adjust the value type based on the field
+    const value = event.target.value as string | number | string[] | number[];
     setFormData((prevState) => ({
       ...prevState,
       [name]: value,
@@ -135,42 +130,40 @@ export default function Products() {
   };
 
   const handleColorChange = (event: any) => {
-    // Get the current selection from the event, ensure it’s an array of numbers
     const selectedColorIds = event.target.value as number[];
-
-    // Manually toggle the colors in the `colorIds` array, ensuring values are numbers
     const newColorIds = selectedColorIds.reduce((acc: number[], id: number) => {
-      // Ensure the color ID is a number
       const numericId = Number(id);
-
-      // If the color is already in the list, remove it, otherwise add it
       if (acc.includes(numericId)) {
-        return acc.filter((colorId) => colorId !== numericId); // Remove if already selected
+        return acc.filter((colorId) => colorId !== numericId);
       } else {
-        return [...acc, numericId]; // Add if not already selected
+        return [...acc, numericId];
       }
     }, []);
 
-    console.log("Updated Color IDs (after toggle, as numbers):", newColorIds); // Log to check array
-
-    // Update the state with the newly toggled color IDs
     setFormData((prevState) => ({
       ...prevState,
-      colorIds: newColorIds, // Ensure colorIds is an array of numbers
+      colorIds: newColorIds,
     }));
   };
 
-  // Fetch products and colors when the component mounts
   useEffect(() => {
     if (status === "idle") {
-      dispatch(fetchProducts()); // Dispatch action to fetch products
-      dispatch(fetchColors()); // Dispatch action to fetch colors
+      dispatch(fetchProducts());
+      dispatch(fetchColors());
+      dispatch(fetchCategories());
     }
   }, [dispatch, status]);
 
-  // Check if color data is still being fetched
-  if (status === "loading" || !color || color.length === 0) {
-    return <div>Loading colors...</div>; // Loading state for color
+  // Loading states
+  if (
+    status === "loading" ||
+    !color ||
+    color.length === 0 ||
+    categoryStatus === "loading" ||
+    !categories ||
+    categories.length === 0
+  ) {
+    return <div>Loading data...</div>;
   }
 
   if (status === "failed") {
@@ -194,49 +187,57 @@ export default function Products() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {products.length > 0 ? (
-              products.map((product: any, index: number) => {
-                const normalizedProduct = normalizeProductData(product);
+  {products.length > 0 ? (
+    products.map((product: any, index: number) => {
+      const normalizedProduct = normalizeProductData(product);
 
-                return (
-                  <TableRow key={normalizedProduct.id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{normalizedProduct.name}</TableCell>
-                    <TableCell>{normalizedProduct.available}</TableCell>
-                    <TableCell>{normalizedProduct.sold}</TableCell>
-                    <TableCell>{normalizedProduct.categoryId}</TableCell>
-                    <TableCell>
-                      {/* Display color names using normalized colorIds */}
-                      {normalizedProduct.colorIds &&
-                      normalizedProduct.colorIds.length > 0
-                        ? getColorNames(normalizedProduct.colorIds, color) // Map colorIds to color names
-                        : "No colors available"}
-                    </TableCell>
-                    <TableCell>{normalizedProduct.price}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        style={{ marginRight: 10 }}
-                        onClick={() => handleOpen(normalizedProduct)} // Open the modal and pass the product
-                      >
-                        Edit
-                      </Button>
-                      <Button variant="outlined" color="error">
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  No products available
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+      // Ensure categoryId and idCategory are compared as the same type (both as strings)
+      const category = categories.find(
+        (category: any) => String(category.id) === String(normalizedProduct.categoryId) // Match categoryId with id
+      );
+
+      return (
+        <TableRow key={normalizedProduct.id}>
+          <TableCell>{index + 1}</TableCell>
+          <TableCell>{normalizedProduct.name}</TableCell>
+          <TableCell>{normalizedProduct.available}</TableCell>
+          <TableCell>{normalizedProduct.sold}</TableCell>
+          <TableCell>
+            {/* If category is found, display category name */}
+            {category ? category.name : "No category"}
+          </TableCell>
+          <TableCell>
+            {normalizedProduct.colorIds && normalizedProduct.colorIds.length > 0
+              ? getColorNames(normalizedProduct.colorIds, color)
+              : "No colors available"}
+          </TableCell>
+          <TableCell>{normalizedProduct.price}</TableCell>
+          <TableCell>
+            <Button
+              variant="outlined"
+              color="secondary"
+              style={{ marginRight: 10 }}
+              onClick={() => handleOpen(normalizedProduct)}
+            >
+              Edit
+            </Button>
+            <Button variant="outlined" color="error">
+              Delete
+            </Button>
+          </TableCell>
+        </TableRow>
+      );
+    })
+  ) : (
+    <TableRow>
+      <TableCell colSpan={8} align="center">
+        No products available
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
+
+
         </Table>
       </TableContainer>
 
@@ -252,12 +253,12 @@ export default function Products() {
             position: "absolute",
             top: "50%",
             left: "50%",
-            transform: "translate(-50%, -50%)", // Center the modal
+            transform: "translate(-50%, -50%)",
             width: 400,
             padding: 3,
             backgroundColor: "white",
-            boxShadow: 24, // Box shadow to make it stand out
-            borderRadius: 2, // Optional: rounded corners for a better look
+            boxShadow: 24,
+            borderRadius: 2,
           }}
         >
           <h2 id="edit-product-modal-title">Edit Product</h2>
@@ -300,19 +301,33 @@ export default function Products() {
                 style={{ marginBottom: 16 }}
               />
               <FormControl fullWidth style={{ marginBottom: 16 }}>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={formData.categoryId}
+                  onChange={(event) => handleSelectChange(event, "categoryId")}
+                  label="Category"
+                >
+                  {categories.map((category: any) => (
+                    <MenuItem
+                      key={category.idCategory}
+                      value={category.idCategory}
+                    >
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth style={{ marginBottom: 16 }}>
                 <InputLabel>Color</InputLabel>
                 <Select
                   multiple
-                  value={formData.colorIds} // This should be an array of selected color IDs
-                  onChange={handleColorChange} // Updates the colorIds in the state
+                  value={formData.colorIds}
+                  onChange={handleColorChange}
                   label="Color"
                 >
                   {color.map((col: any) => (
-                    <MenuItem
-                      key={col.id}
-                      value={col.id}
-                      // No 'disabled' property here, allowing toggling
-                    >
+                    <MenuItem key={col.id} value={col.id}>
                       {col.name}
                     </MenuItem>
                   ))}
