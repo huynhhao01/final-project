@@ -33,23 +33,17 @@ const getColorNames = (colorIds: any[], colorData: any[]) => {
 
   return colorIds
     .map((colorId) => {
-      const colorItem = colorData.find(
-        (col: any) => String(col.id) === String(colorId)
-      );
+      const colorItem = colorData.find((col: any) => String(col.id) === String(colorId));
       return colorItem ? colorItem.name : "Unknown Color";
     })
     .join(", ");
 };
 
 export default function Products() {
-  const dispatch = useDispatch<AppDispatch>();
-  const { products, status, error } = useSelector(
-    (state: any) => state.products
-  );
-  const { color } = useSelector((state: any) => state.color);
-  const { categories, status: categoryStatus } = useSelector(
-    (state: any) => state.categories
-  );
+  const dispatch = useDispatch<AppDispatch>(); 
+  const { products, status, error } = useSelector((state: any) => state.products); 
+  const { color } = useSelector((state: any) => state.color); 
+  const { categories, status: categoryStatus } = useSelector((state: any) => state.categories); 
 
   // State to control modal visibility and selected product data
   const [open, setOpen] = useState(false);
@@ -60,7 +54,7 @@ export default function Products() {
     name: "",
     available: 0,
     sold: 0,
-    categoryId: "",
+    categoryId: "", 
     price: 0,
     colorIds: [] as number[],
   });
@@ -69,9 +63,7 @@ export default function Products() {
     const normalizedProduct = { ...product };
 
     if (normalizedProduct.colorIds) {
-      normalizedProduct.colorIds = normalizedProduct.colorIds.map((id: any) =>
-        Number(id)
-      );
+      normalizedProduct.colorIds = normalizedProduct.colorIds.map((id: any) => Number(id));
     }
 
     return normalizedProduct;
@@ -83,7 +75,7 @@ export default function Products() {
       name: product.name,
       available: product.available,
       sold: product.sold,
-      categoryId: product.categoryId,
+      categoryId: product.categoryId,  // Populate categoryId from the product
       price: product.price,
       colorIds: product.colorIds || [],
     });
@@ -101,23 +93,21 @@ export default function Products() {
     }
 
     if (selectedProduct) {
-      dispatch(
-        updateProduct({
-          ...formData,
-          colorIds: formData.colorIds,
-          id: selectedProduct.id,
-        })
-      );
+      dispatch(updateProduct({
+        ...formData,
+        colorIds: formData.colorIds,
+        id: selectedProduct.id,
+      }));
     }
 
     handleClose();
   };
 
   const handleSelectChange = (event: any, name: string) => {
-    const value = event.target.value as string | number | string[] | number[];
+    const value = event.target.value;
     setFormData((prevState) => ({
       ...prevState,
-      [name]: value,
+      [name]: value,  // Update categoryId here when the user selects a new category
     }));
   };
 
@@ -150,19 +140,12 @@ export default function Products() {
     if (status === "idle") {
       dispatch(fetchProducts());
       dispatch(fetchColors());
-      dispatch(fetchCategories());
+      dispatch(fetchCategories()); 
     }
   }, [dispatch, status]);
 
   // Loading states
-  if (
-    status === "loading" ||
-    !color ||
-    color.length === 0 ||
-    categoryStatus === "loading" ||
-    !categories ||
-    categories.length === 0
-  ) {
+  if (status === "loading" || !color || color.length === 0 || categoryStatus === "loading" || !categories || categories.length === 0) {
     return <div>Loading data...</div>;
   }
 
@@ -187,57 +170,53 @@ export default function Products() {
             </TableRow>
           </TableHead>
           <TableBody>
-  {products.length > 0 ? (
-    products.map((product: any, index: number) => {
-      const normalizedProduct = normalizeProductData(product);
+            {products.length > 0 ? (
+              products.map((product: any, index: number) => {
+                const normalizedProduct = normalizeProductData(product);
 
-      // Ensure categoryId and idCategory are compared as the same type (both as strings)
-      const category = categories.find(
-        (category: any) => String(category.id) === String(normalizedProduct.categoryId) // Match categoryId with id
-      );
+                // Find the category for the product by matching categoryId
+                const category = categories.find((category: any) => String(category.id) === String(normalizedProduct.categoryId));
 
-      return (
-        <TableRow key={normalizedProduct.id}>
-          <TableCell>{index + 1}</TableCell>
-          <TableCell>{normalizedProduct.name}</TableCell>
-          <TableCell>{normalizedProduct.available}</TableCell>
-          <TableCell>{normalizedProduct.sold}</TableCell>
-          <TableCell>
-            {/* If category is found, display category name */}
-            {category ? category.name : "No category"}
-          </TableCell>
-          <TableCell>
-            {normalizedProduct.colorIds && normalizedProduct.colorIds.length > 0
-              ? getColorNames(normalizedProduct.colorIds, color)
-              : "No colors available"}
-          </TableCell>
-          <TableCell>{normalizedProduct.price}</TableCell>
-          <TableCell>
-            <Button
-              variant="outlined"
-              color="secondary"
-              style={{ marginRight: 10 }}
-              onClick={() => handleOpen(normalizedProduct)}
-            >
-              Edit
-            </Button>
-            <Button variant="outlined" color="error">
-              Delete
-            </Button>
-          </TableCell>
-        </TableRow>
-      );
-    })
-  ) : (
-    <TableRow>
-      <TableCell colSpan={8} align="center">
-        No products available
-      </TableCell>
-    </TableRow>
-  )}
-</TableBody>
-
-
+                return (
+                  <TableRow key={normalizedProduct.id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{normalizedProduct.name}</TableCell>
+                    <TableCell>{normalizedProduct.available}</TableCell>
+                    <TableCell>{normalizedProduct.sold}</TableCell>
+                    <TableCell>
+                      {/* If category is found, display category name */}
+                      {category ? category.name : "No category"}
+                    </TableCell>
+                    <TableCell>
+                      {normalizedProduct.colorIds && normalizedProduct.colorIds.length > 0
+                        ? getColorNames(normalizedProduct.colorIds, color)
+                        : "No colors available"}
+                    </TableCell>
+                    <TableCell>{normalizedProduct.price}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        style={{ marginRight: 10 }}
+                        onClick={() => handleOpen(normalizedProduct)}
+                      >
+                        Edit
+                      </Button>
+                      <Button variant="outlined" color="error">
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  No products available
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
         </Table>
       </TableContainer>
 
@@ -248,19 +227,17 @@ export default function Products() {
         aria-labelledby="edit-product-modal-title"
         aria-describedby="edit-product-modal-description"
       >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            padding: 3,
-            backgroundColor: "white",
-            boxShadow: 24,
-            borderRadius: 2,
-          }}
-        >
+        <Box sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)", 
+          width: 400,
+          padding: 3,
+          backgroundColor: "white",
+          boxShadow: 24,
+          borderRadius: 2,
+        }}>
           <h2 id="edit-product-modal-title">Edit Product</h2>
           {selectedProduct ? (
             <div>
@@ -303,15 +280,12 @@ export default function Products() {
               <FormControl fullWidth style={{ marginBottom: 16 }}>
                 <InputLabel>Category</InputLabel>
                 <Select
-                  value={formData.categoryId}
+                  value={formData.categoryId}  // Bind categoryId to the Select input
                   onChange={(event) => handleSelectChange(event, "categoryId")}
                   label="Category"
                 >
                   {categories.map((category: any) => (
-                    <MenuItem
-                      key={category.idCategory}
-                      value={category.idCategory}
-                    >
+                    <MenuItem key={category.id} value={category.id}>
                       {category.name}
                     </MenuItem>
                   ))}

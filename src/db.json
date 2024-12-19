@@ -45,7 +45,7 @@
   ],
   "products": [
     {
-      "name": "T-shirt long sleevesdf",
+      "name": "T-shirt long sleeves",
       "available": "23",
       "sold": "100",
       "price": "300000",
@@ -58,7 +58,7 @@
       "name": "Trouser with tie",
       "available": "4",
       "sold": 2,
-      "categoryId": 1,
+      "categoryId": "2",
       "price": 450000,
       "colorIds": [
         3
@@ -66,16 +66,13 @@
       "id": "2"
     },
     {
-      "id": "3",
       "name": "Backpack Elsa",
       "available": 100,
       "sold": 7,
-      "categoryId": 2,
-      "colors": [
-        4,
-        6
-      ],
-      "price": 370000
+      "categoryId": "1",
+      "price": 370000,
+      "colorIds": [],
+      "id": "3"
     },
     {
       "name": "Silver necklace",
@@ -84,8 +81,7 @@
       "categoryId": 3,
       "price": 1450000,
       "colorIds": [
-        2,
-        3
+        2
       ],
       "id": "4"
     },
