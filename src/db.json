@@ -5,16 +5,6 @@
   },
   "categories": [
     {
-      "idCategory": 1,
-      "name": "Cloths",
-      "id": "1"
-    },
-    {
-      "idCategory": 2,
-      "name": "Bags",
-      "id": "2"
-    },
-    {
       "idCategory": 3,
       "name": "Accessory",
       "id": "3"
@@ -65,7 +55,7 @@
       "name": "Trouser with tie",
       "available": "4",
       "sold": 2,
-      "categoryId": "2",
+      "categoryId": null,
       "price": 450000,
       "colorIds": [
         3
@@ -76,7 +66,7 @@
       "name": "Backpack Elsa",
       "available": 100,
       "sold": 7,
-      "categoryId": "1",
+      "categoryId": null,
       "price": 370000,
       "colorIds": [],
       "id": "3"

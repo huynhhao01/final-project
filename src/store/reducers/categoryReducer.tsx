@@ -18,7 +18,7 @@ const initialState: CategoryState = {
   error: null,
 };
 
-// Async action to fetch categories from an API (for example)
+// Async action to fetch categories from an API
 export const fetchCategories = createAsyncThunk(
   "categories/fetchCategories",
   async () => {
@@ -29,7 +29,6 @@ export const fetchCategories = createAsyncThunk(
 );
 
 // Edit category async thunk
-// editCategoryThunk in categoryReducer.tsx
 export const editCategoryThunk = createAsyncThunk(
   "categories/editCategory",
   async (category: { idCategory: number; name: string }) => {
@@ -42,7 +41,7 @@ export const editCategoryThunk = createAsyncThunk(
     });
 
     if (!response.ok) {
-      const errorText = await response.text(); // Get the error response as text
+      const errorText = await response.text();
       console.error("Error response:", errorText);
       throw new Error(errorText || "Failed to update category");
     }
@@ -52,8 +51,27 @@ export const editCategoryThunk = createAsyncThunk(
   }
 );
 
+// Delete category async thunk
+export const deleteCategoryThunk = createAsyncThunk(
+  "categories/deleteCategory",
+  async (idCategory: number, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/categories/${idCategory}`, {
+        method: "DELETE", // Make a DELETE request
+      });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        return rejectWithValue(errorText || "Failed to delete category");
+      }
 
+      return idCategory; // Return the id of the deleted category
+    } catch (error) {
+      // return rejectWithValue(error.message || "Failed to delete category");
+    }
+  }
+);
 
 // Slice definition
 const categorySlice = createSlice({
@@ -91,6 +109,20 @@ const categorySlice = createSlice({
       .addCase(editCategoryThunk.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Failed to edit category";
+      })
+      // Delete category
+      .addCase(deleteCategoryThunk.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(deleteCategoryThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.categories = state.categories.filter(
+          (category) => category.idCategory !== action.payload // Remove deleted category
+        );
+      })
+      .addCase(deleteCategoryThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "Failed to delete category";
       });
   },
 });

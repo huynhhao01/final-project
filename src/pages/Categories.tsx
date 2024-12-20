@@ -11,16 +11,21 @@ import {
   Container,
   Paper,
   TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import {
   fetchCategories,
   editCategoryThunk,
+  deleteCategoryThunk,
 } from "../store/reducers/categoryReducer";
 import { AppDispatch } from "../store";
 
 // Define the Category type explicitly for TypeScript to infer the correct types
 interface Category {
-  id: number;
+  idCategory: number;
   name: string;
 }
 
@@ -38,6 +43,10 @@ const Categories = () => {
     name: string;
   }>({ idCategory: null, name: "" });
 
+  // State to manage delete confirmation dialog
+  const [openDialog, setOpenDialog] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+
   // Fetch categories when the component mounts
   useEffect(() => {
     if (status === "idle") {
@@ -47,8 +56,8 @@ const Categories = () => {
 
   // Handle Edit button click
   const handleEdit = (category: Category) => {
-    const { id, name } = category;
-    setEditingCategory({ idCategory: id, name });
+    const { idCategory, name } = category;
+    setEditingCategory({ idCategory, name });
   };
 
   // Handle form submission (saving changes)
@@ -66,7 +75,7 @@ const Categories = () => {
       // Optionally update the Redux state directly if needed (optimistic UI update)
       dispatch({
         type: "categories/updateCategory", // Replace with the actual action type if necessary
-        payload: { id: categoryId, name },
+        payload: { idCategory: categoryId, name },
       });
 
       // Reset form after saving
@@ -74,6 +83,27 @@ const Categories = () => {
     } else {
       console.error("Please fill out the form correctly.");
     }
+  };
+
+  // Handle Delete button click, open confirmation dialog
+  const handleDelete = (idCategory: number) => {
+    setCategoryToDelete(idCategory);
+    setOpenDialog(true); // Show confirmation dialog
+  };
+
+  // Confirm deletion
+  const confirmDelete = () => {
+    if (categoryToDelete !== null) {
+      dispatch(deleteCategoryThunk(categoryToDelete)); // Dispatch the delete action
+    }
+    setOpenDialog(false); // Close dialog
+    setCategoryToDelete(null); // Reset category to delete
+  };
+
+  // Cancel deletion
+  const cancelDelete = () => {
+    setOpenDialog(false); // Close dialog without deleting
+    setCategoryToDelete(null); // Reset category to delete
   };
 
   // Return early if status is loading or failed
@@ -87,6 +117,7 @@ const Categories = () => {
 
   return (
     <Container>
+      <Button variant="outlined">Add</Button>
       <TableContainer component={Paper}>
         <Table aria-label="category table">
           <TableHead>
@@ -98,11 +129,11 @@ const Categories = () => {
           </TableHead>
           <TableBody>
             {categories.map((category: Category, index: number) => (
-              <TableRow key={category.id}>
+              <TableRow key={category.idCategory}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
                   {/* Conditionally render TextField when editingCategory matches this row */}
-                  {editingCategory.idCategory === category.id ? (
+                  {editingCategory.idCategory === category.idCategory ? (
                     <TextField
                       label="Category Name"
                       value={editingCategory.name}
@@ -125,7 +156,7 @@ const Categories = () => {
                   )}
                 </TableCell>
                 <TableCell>
-                  {editingCategory.idCategory === category.id ? (
+                  {editingCategory.idCategory === category.idCategory ? (
                     <Button
                       variant="contained"
                       color="primary"
@@ -134,13 +165,22 @@ const Categories = () => {
                       Save Changes
                     </Button>
                   ) : (
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      onClick={() => handleEdit(category)}
-                    >
-                      Edit
-                    </Button>
+                    <>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleEdit(category)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleDelete(category.idCategory)} // Trigger delete confirmation
+                      >
+                        Delete
+                      </Button>
+                    </>
                   )}
                 </TableCell>
               </TableRow>
@@ -148,6 +188,31 @@ const Categories = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={cancelDelete}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Confirm Deletion</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this category?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDelete} color="primary">
+            No
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            color="secondary"
+            autoFocus
+          >
+            Yes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
