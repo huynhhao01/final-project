@@ -20,13 +20,13 @@ import {
   fetchCategories,
   editCategoryThunk,
   deleteCategoryThunk,
-  addCategoryThunk, // import the addCategory thunk
+  addCategoryThunk,
 } from "../store/reducers/categoryReducer";
 import { AppDispatch } from "../store";
 
-// Define the Category type explicitly for TypeScript to infer the correct types
+// Update Category interface to reflect ID as a number
 interface Category {
-  idCategory: number;
+  id: number; // ID is now a number
   name: string;
 }
 
@@ -40,13 +40,13 @@ const Categories = () => {
 
   // Local state to handle form inputs
   const [editingCategory, setEditingCategory] = useState<{
-    idCategory: number | null;
+    idCategory: number | null; // Update to number
     name: string;
   }>({ idCategory: null, name: "" });
 
   // State to manage delete confirmation dialog
   const [openDialog, setOpenDialog] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null); // category ID is now number
 
   // State to manage add category dialog
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -61,29 +61,36 @@ const Categories = () => {
 
   // Handle Edit button click
   const handleEdit = (category: Category) => {
-    const { idCategory, name } = category;
-    setEditingCategory({ idCategory, name });
+    const { id, name } = category;
+    setEditingCategory({ idCategory: id, name });
   };
 
   // Handle form submission (saving changes)
   const handleSave = () => {
     const { idCategory, name } = editingCategory;
 
-    // Ensure idCategory is a number (convert it if necessary)
-    const categoryId = Number(idCategory);
+    if (idCategory && name.trim() !== "") {
+      // Optimistic UI Update: Immediately update the categories list in Redux
+      const updatedCategories = categories.map((category:any) =>
+        category.id === idCategory ? { ...category, name } : category
+      );
 
-    // Validate if idCategory is a valid number and name is not empty
-    if (categoryId && name.trim() !== "") {
-      // Dispatch the save action
-      dispatch(editCategoryThunk({ idCategory: categoryId, name }));
-
-      // Optionally update the Redux state directly if needed (optimistic UI update)
+      // Dispatch optimistic update to Redux
       dispatch({
-        type: "categories/updateCategory", // Replace with the actual action type if necessary
-        payload: { idCategory: categoryId, name },
+        type: "categories/setCategories", // You should have an action to update categories
+        payload: updatedCategories,
       });
 
-      // Reset form after saving
+      // Dispatch the editCategoryThunk to update the server data
+      dispatch(editCategoryThunk({ idCategory, name }))
+        .unwrap()
+        .then(() => {
+          console.log(`Category with ID ${idCategory} successfully updated`);
+        })
+        .catch((error) => {
+          console.error("Failed to update category:", error);
+        });
+
       setEditingCategory({ idCategory: null, name: "" });
     } else {
       console.error("Please fill out the form correctly.");
@@ -91,62 +98,60 @@ const Categories = () => {
   };
 
   // Handle Delete button click, open confirmation dialog
-  const handleDelete = (idCategory: number) => {
-    setCategoryToDelete(idCategory);  // Make sure idCategory is valid here
-    setOpenDialog(true); // Show confirmation dialog
+  const handleDelete = (categoryId: number) => {
+    console.log("Attempting to delete category with ID:", categoryId);
+    setCategoryToDelete(categoryId); // Save the number ID
+    setOpenDialog(true);
   };
 
-  // Confirm deletion
   const confirmDelete = () => {
+    console.log("Category to delete:", categoryToDelete);
     if (categoryToDelete !== null) {
       dispatch(deleteCategoryThunk(categoryToDelete))
         .unwrap()
-        .then((idCategory) => {
-          console.log(`Category with ID ${idCategory} deleted`);
-          // Optionally update the state here
-          // Remove the category from the local state to update the UI immediately
-          dispatch(fetchCategories()); // Refetch categories after deletion, or optimistically remove it
+        .then(() => {
+          console.log(`Category with ID ${categoryToDelete} deleted`);
+          dispatch(fetchCategories()); // Refetch categories to get the updated list
         })
         .catch((error) => {
           console.error("Failed to delete category:", error);
-          // Optionally show a notification or an error message to the user
         });
+    } else {
+      console.error("No valid category ID to delete.");
     }
-    setOpenDialog(false); // Close the confirmation dialog
-    setCategoryToDelete(null); // Reset categoryToDelete state
-  };
-  
 
-  // Cancel deletion
+    setOpenDialog(false);
+    setCategoryToDelete(null); // Reset categoryToDelete state after the operation
+  };
+
   const cancelDelete = () => {
-    setOpenDialog(false); // Close dialog without deleting
+    setOpenDialog(false);
     setCategoryToDelete(null); // Reset category to delete
   };
 
   // Handle Add Category dialog open
   const handleAddDialogOpen = () => {
     setOpenAddDialog(true);
-    setNewCategoryName(""); // Clear the input field when opening the dialog
+    setNewCategoryName("");
   };
 
   // Handle Add Category dialog close
   const handleAddDialogClose = () => {
     setOpenAddDialog(false);
-    setNewCategoryName(""); // Clear the input field when closing the dialog
+    setNewCategoryName("");
   };
 
   // Handle adding new category
   const handleAddCategory = () => {
     if (newCategoryName.trim()) {
       dispatch(addCategoryThunk({ name: newCategoryName }));
-      setNewCategoryName(""); // Reset the input field
-      setOpenAddDialog(false); // Close the dialog
+      setNewCategoryName("");
+      setOpenAddDialog(false);
     } else {
       console.error("Category name cannot be empty.");
     }
   };
 
-  // Return early if status is loading or failed
   if (status === "loading") {
     return <div>Loading categories...</div>;
   }
@@ -157,7 +162,6 @@ const Categories = () => {
 
   return (
     <Container>
-      {/* Add Category Button */}
       <Button variant="outlined" onClick={handleAddDialogOpen}>
         Add Category
       </Button>
@@ -173,11 +177,10 @@ const Categories = () => {
           </TableHead>
           <TableBody>
             {categories.map((category: Category, index: number) => (
-              <TableRow key={category.idCategory}>
+              <TableRow key={category.id}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
-                  {/* Conditionally render TextField when editingCategory matches this row */}
-                  {editingCategory.idCategory === category.idCategory ? (
+                  {editingCategory.idCategory === category.id ? (
                     <TextField
                       label="Category Name"
                       value={editingCategory.name}
@@ -188,24 +191,14 @@ const Categories = () => {
                         })
                       }
                       fullWidth
-                      error={editingCategory.name.trim() === ""}
-                      helperText={
-                        editingCategory.name.trim() === ""
-                          ? "Name cannot be empty"
-                          : ""
-                      }
                     />
                   ) : (
                     category.name
                   )}
                 </TableCell>
                 <TableCell>
-                  {editingCategory.idCategory === category.idCategory ? (
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleSave}
-                    >
+                  {editingCategory.idCategory === category.id ? (
+                    <Button variant="contained" color="primary" onClick={handleSave}>
                       Save Changes
                     </Button>
                   ) : (
@@ -214,14 +207,13 @@ const Categories = () => {
                         variant="outlined"
                         color="secondary"
                         onClick={() => handleEdit(category)}
-                        disabled={editingCategory.idCategory !== null} // Disable if editing another category
                       >
                         Edit
                       </Button>
                       <Button
                         variant="outlined"
                         color="secondary"
-                        onClick={() => handleDelete(category.idCategory)} // Trigger delete confirmation
+                        onClick={() => handleDelete(category.id)} // Pass category.id (which is now a number)
                       >
                         Delete
                       </Button>
@@ -234,14 +226,8 @@ const Categories = () => {
         </Table>
       </TableContainer>
 
-      {/* Confirmation Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={cancelDelete}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Confirm Deletion</DialogTitle>
+      <Dialog open={openDialog} onClose={cancelDelete}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           Are you sure you want to delete this category?
         </DialogContent>
@@ -255,36 +241,13 @@ const Categories = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Add Category Dialog */}
-      <Dialog
-        open={openAddDialog}
-        onClose={handleAddDialogClose}
-        aria-labelledby="add-category-dialog-title"
-        sx={{
-          "& .MuiDialog-paper": {
-            width: "600px",  // Increase modal width
-            padding: "20px", // Add padding inside the modal
-            maxWidth: "80%", // Responsive max width
-            borderRadius: "8px", // Optional: rounded corners
-          },
-        }}
-      >
-        <DialogTitle id="add-category-dialog-title">Add Category</DialogTitle>
+      <Dialog open={openAddDialog} onClose={handleAddDialogClose}>
+        <DialogTitle>Add Category</DialogTitle>
         <DialogContent>
           <TextField
             value={newCategoryName}
             onChange={(e) => setNewCategoryName(e.target.value)}
             fullWidth
-            sx={{
-              '& .MuiInputBase-root': {
-                fontSize: '1.5rem',  // Increase font size
-                padding: '12px',     // Adjust padding for more height
-                height: '60px',      // Adjust height of the input field
-              },
-              '& .MuiFormLabel-root': {
-                fontSize: '1.2rem', // Increase label font size
-              },
-            }}
           />
         </DialogContent>
         <DialogActions>

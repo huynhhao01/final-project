@@ -5,24 +5,18 @@
   },
   "categories": [
     {
-      "id": "5dd6",
-      "name": "Cloth"
+      "idCategory": "4a59",
+      "name": "Cloths",
+      "id": "4a59"
     },
     {
-      "id": "7723",
-      "name": "Bag"
+      "idCategory": "5fe5",
+      "name": "Bags",
+      "id": "5fe5"
     },
     {
-      "id": "cd21",
-      "name": "Balo"
-    },
-    {
-      "id": "cf79",
-      "name": "saefse"
-    },
-    {
-      "id": "005d",
-      "name": "ewgegeg"
+      "id": "f8c7",
+      "name": "Accessory"
     }
   ],
   "colors": [
