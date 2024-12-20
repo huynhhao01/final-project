@@ -24,7 +24,30 @@ export const fetchCategories = createAsyncThunk(
   async () => {
     const response = await fetch("/categories"); // Adjust to your API
     const data = await response.json();
-    return data; // Return data that contains categories
+    return data;
+  }
+);
+
+// Add category async thunk
+export const addCategoryThunk = createAsyncThunk(
+  "categories/addCategory",
+  async (category: { name: string }) => {
+    const response = await fetch("/categories", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(category),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response:", errorText);
+      throw new Error(errorText || "Failed to add category");
+    }
+
+    const data = await response.json();
+    return data; // Return the added category
   }
 );
 
@@ -47,7 +70,7 @@ export const editCategoryThunk = createAsyncThunk(
     }
 
     const data = await response.json();
-    return data; // Return the updated category
+    return data;
   }
 );
 
@@ -56,9 +79,16 @@ export const deleteCategoryThunk = createAsyncThunk(
   "categories/deleteCategory",
   async (idCategory: number, { rejectWithValue }) => {
     try {
+      if (!idCategory) {
+        return rejectWithValue("Invalid category ID.");
+      }
+
       const response = await fetch(`/categories/${idCategory}`, {
-        method: "DELETE", // Make a DELETE request
+        method: "DELETE", // Make sure method is DELETE
       });
+
+      // Debugging line to log the response
+      console.log("Delete response:", response);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -66,12 +96,17 @@ export const deleteCategoryThunk = createAsyncThunk(
         return rejectWithValue(errorText || "Failed to delete category");
       }
 
-      return idCategory; // Return the id of the deleted category
+      // Return the id of the deleted category
+      return idCategory;
+
     } catch (error) {
+      console.error("Error during delete request:", error);
       // return rejectWithValue(error.message || "Failed to delete category");
     }
   }
 );
+
+
 
 // Slice definition
 const categorySlice = createSlice({
@@ -86,12 +121,24 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.categories = action.payload; // Populate categories with fetched data
+        state.categories = action.payload;
         state.error = null;
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Failed to fetch categories";
+      })
+      // Add category
+      .addCase(addCategoryThunk.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(addCategoryThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.categories.push(action.payload); // Add the new category to the list
+      })
+      .addCase(addCategoryThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "Failed to add category";
       })
       // Edit category
       .addCase(editCategoryThunk.pending, (state) => {
@@ -117,7 +164,7 @@ const categorySlice = createSlice({
       .addCase(deleteCategoryThunk.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.categories = state.categories.filter(
-          (category) => category.idCategory !== action.payload // Remove deleted category
+          (category) => category.idCategory !== action.payload
         );
       })
       .addCase(deleteCategoryThunk.rejected, (state, action) => {
