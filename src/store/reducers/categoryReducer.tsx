@@ -28,48 +28,38 @@ export const fetchCategories = createAsyncThunk(
   }
 );
 
-// Async action to fetch objects for a specific category (e.g., based on idCategory)
-export const fetchCategoryObjects = createAsyncThunk(
-  "categories/fetchCategoryObjects",
-  async (idCategory: number) => {
-    const response = await fetch(`/categories/${idCategory}/objects`);
+// Edit category async thunk
+// editCategoryThunk in categoryReducer.tsx
+export const editCategoryThunk = createAsyncThunk(
+  "categories/editCategory",
+  async (category: { idCategory: number; name: string }) => {
+    const response = await fetch(`/categories/${category.idCategory}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(category),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error response as text
+      console.error("Error response:", errorText);
+      throw new Error(errorText || "Failed to update category");
+    }
+
     const data = await response.json();
-    return { idCategory, objects: data }; // Return objects for a specific category
+    return data; // Return the updated category
   }
 );
+
+
+
 
 // Slice definition
 const categorySlice = createSlice({
   name: "categories",
   initialState,
-  reducers: {
-    addObjectToCategory: (
-      state,
-      action: { payload: { idCategory: number; objectId: number } }
-    ) => {
-      const { idCategory, objectId } = action.payload;
-      const category = state.categories.find(
-        (cat) => cat.idCategory === idCategory
-      );
-      if (category) {
-        category.objectIdCategory.push(objectId); // Add object to category
-      }
-    },
-    removeObjectFromCategory: (
-      state,
-      action: { payload: { idCategory: number; objectId: number } }
-    ) => {
-      const { idCategory, objectId } = action.payload;
-      const category = state.categories.find(
-        (cat) => cat.idCategory === idCategory
-      );
-      if (category) {
-        category.objectIdCategory = category.objectIdCategory.filter(
-          (id) => id !== objectId
-        ); // Remove object from category
-      }
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       // Fetch categories
@@ -85,28 +75,24 @@ const categorySlice = createSlice({
         state.status = "failed";
         state.error = action.error.message || "Failed to fetch categories";
       })
-      // Fetch objects for a specific category
-      .addCase(fetchCategoryObjects.pending, (state) => {
+      // Edit category
+      .addCase(editCategoryThunk.pending, (state) => {
         state.status = "loading";
       })
-      .addCase(fetchCategoryObjects.fulfilled, (state, action) => {
+      .addCase(editCategoryThunk.fulfilled, (state, action) => {
         state.status = "succeeded";
-        const category = state.categories.find(
-          (cat) => cat.idCategory === action.payload.idCategory
+        const index = state.categories.findIndex(
+          (category) => category.idCategory === action.payload.idCategory
         );
-        if (category) {
-          category.objectIdCategory = action.payload.objects; // Add objects to category
+        if (index !== -1) {
+          state.categories[index] = action.payload; // Update category with edited data
         }
       })
-      .addCase(fetchCategoryObjects.rejected, (state, action) => {
+      .addCase(editCategoryThunk.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message || "Failed to fetch objects for category";
+        state.error = action.error.message || "Failed to edit category";
       });
   },
 });
 
-// Reducer export
 export default categorySlice.reducer;
-
-// Actions export
-export const { addObjectToCategory, removeObjectFromCategory } = categorySlice.actions;
