@@ -71,7 +71,7 @@ const Categories = () => {
 
     if (idCategory && name.trim() !== "") {
       // Optimistic UI Update: Immediately update the categories list in Redux
-      const updatedCategories = categories.map((category:any) =>
+      const updatedCategories = categories.map((category: any) =>
         category.id === idCategory ? { ...category, name } : category
       );
 
@@ -198,7 +198,11 @@ const Categories = () => {
                 </TableCell>
                 <TableCell>
                   {editingCategory.idCategory === category.id ? (
-                    <Button variant="contained" color="primary" onClick={handleSave}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleSave}
+                    >
                       Save Changes
                     </Button>
                   ) : (

@@ -15,8 +15,9 @@
       "id": "5fe5"
     },
     {
-      "id": "f8c7",
-      "name": "Accessory"
+      "idCategory": "f8c7",
+      "name": "Accessory",
+      "id": "f8c7"
     }
   ],
   "colors": [
